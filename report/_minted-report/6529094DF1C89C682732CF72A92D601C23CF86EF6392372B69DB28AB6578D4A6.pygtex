@@ -1,0 +1,114 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{peewee} \PYG{k}{as} \PYG{n+nn}{pw}
+\PYG{k+kn}{import} \PYG{n+nn}{logging}
+
+\PYG{n}{logging}\PYG{o}{.}\PYG{n}{basicConfig}\PYG{p}{(}\PYG{n}{level}\PYG{o}{=}\PYG{n}{logging}\PYG{o}{.}\PYG{n}{DEBUG}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{}db = pw.SqliteDatabase(\PYGZsq{}database.db\PYGZsq{})}
+\PYG{n}{db} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{SqliteDatabase}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}/run/media/danya/D565\PYGZhy{}7987/database.db\PYGZsq{}}\PYG{p}{,} \PYG{n}{timeout}\PYG{o}{=}\PYG{l+m+mi}{15}\PYG{p}{)}
+
+\PYG{k}{class} \PYG{n+nc}{MyModel}\PYG{p}{(}\PYG{n}{pw}\PYG{o}{.}\PYG{n}{Model}\PYG{p}{):}
+    \PYG{k}{class} \PYG{n+nc}{Meta}\PYG{p}{:}
+        \PYG{n}{database} \PYG{o}{=} \PYG{n}{db}
+
+
+\PYG{c+c1}{\PYGZsh{} Special sentinel value for the `last\PYGZus{}updated` field}
+\PYG{c+c1}{\PYGZsh{} to force the update of a value.}
+\PYG{n}{INVALIDATE} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{min}
+
+\PYG{c+c1}{\PYGZsh{} Alias for current datetime}
+\PYG{n}{now} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{now}
+
+\PYG{k}{def} \PYG{n+nf}{create\PYGZus{}table}\PYG{p}{(}\PYG{n}{model}\PYG{p}{:} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{Model}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Creates a table for a model.}
+\PYG{l+s+sd}{    Return the same model \PYGZhy{}\PYGZhy{} that way it can be used as a decorator.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{db}\PYG{o}{.}\PYG{n}{create\PYGZus{}tables}\PYG{p}{([}\PYG{n}{model}\PYG{p}{],} \PYG{n}{safe}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{model}
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{Document}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Single instance of document in corpus\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{title} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CharField}\PYG{p}{()}
+    \PYG{n}{source} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CharField}\PYG{p}{(}\PYG{n}{null}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{,} \PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+    \PYG{n}{content} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{TextField}\PYG{p}{()}
+    \PYG{n}{last\PYGZus{}updated} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{DateTimeField}\PYG{p}{(}\PYG{n}{default}\PYG{o}{=}\PYG{n}{pw}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{now}\PYG{p}{,} \PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{NormalizedTerm}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Term after normalization and stemming\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{name} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CharField}\PYG{p}{(}\PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{NaturalTerm}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Term as it appears in the document.}
+
+\PYG{l+s+sd}{    This is what the term looked like before stemming and normalization, but lowercased.}
+\PYG{l+s+sd}{    If a word is not here, it is surely not in any document.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{name} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CharField}\PYG{p}{(}\PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+    \PYG{n}{normalized\PYGZus{}form} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{,} \PYG{n}{null}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{DocumentTermPairCount}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Counts the number of times that this term appears in this document.}
+
+\PYG{l+s+sd}{    This caches `Document.content.split().count(term)` for each term and `Document`.}
+
+\PYG{l+s+sd}{    This is used both to calculate the TF\PYGZhy{}IDF score of a term in a document,}
+\PYG{l+s+sd}{    and it also forms the inverse index to find documents that contain a term.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{document} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{Document}\PYG{p}{,} \PYG{n}{on\PYGZus{}delete}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}CASCADE\PYGZsq{}}\PYG{p}{)}
+    \PYG{n}{term} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{)}
+    \PYG{n}{count} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{IntegerField}\PYG{p}{()}
+    \PYG{n}{last\PYGZus{}updated} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{DateTimeField}\PYG{p}{(}\PYG{n}{default}\PYG{o}{=}\PYG{n}{pw}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{now}\PYG{p}{,} \PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{k}{class} \PYG{n+nc}{Meta}\PYG{p}{:}
+        \PYG{n}{primary\PYGZus{}key} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CompositeKey}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZsq{}}\PYG{p}{,} \PYG{l+s+s1}{\PYGZsq{}term\PYGZsq{}}\PYG{p}{)}
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{DocumentsContainingTermCount}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Counts the number of documents that contain this term at least once.}
+
+\PYG{l+s+sd}{    This caches `len([doc for doc in Document if term in doc.content.split()])` for each term.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{term} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{)}
+    \PYG{n}{count} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{IntegerField}\PYG{p}{(}\PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+    \PYG{n}{last\PYGZus{}updated} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{DateTimeField}\PYG{p}{(}\PYG{n}{default}\PYG{o}{=}\PYG{n}{pw}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{now}\PYG{p}{,} \PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{k}{class} \PYG{n+nc}{Meta}\PYG{p}{:}
+        \PYG{n}{primary\PYGZus{}key} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CompositeKey}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}term\PYGZsq{}}\PYG{p}{)}
+
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{DocumentTotalTermCount}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Counts the total number of non\PYGZhy{}unique terms in the document.}
+
+\PYG{l+s+sd}{    This caches `len(doc.content.split())` for each document.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{document} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{Document}\PYG{p}{,} \PYG{n}{on\PYGZus{}delete}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}CASCADE\PYGZsq{}}\PYG{p}{)}
+    \PYG{n}{count} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{IntegerField}\PYG{p}{()}
+    \PYG{n}{last\PYGZus{}updated} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{DateTimeField}\PYG{p}{(}\PYG{n}{default}\PYG{o}{=}\PYG{n}{pw}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{datetime}\PYG{o}{.}\PYG{n}{now}\PYG{p}{,} \PYG{n}{index}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{k}{class} \PYG{n+nc}{Meta}\PYG{p}{:}
+        \PYG{n}{primary\PYGZus{}key} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CompositeKey}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZsq{}}\PYG{p}{)}
+
+\PYG{n+nd}{@create\PYGZus{}table}
+\PYG{k}{class} \PYG{n+nc}{DocumentTermPosition}\PYG{p}{(}\PYG{n}{MyModel}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Position of a term in the document.}
+
+\PYG{l+s+sd}{    Acts like the document\PYGZsq{}s forward index.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{n}{document} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{Document}\PYG{p}{,} \PYG{n}{on\PYGZus{}delete}\PYG{o}{=}\PYG{l+s+s1}{\PYGZsq{}CASCADE\PYGZsq{}}\PYG{p}{)}
+    \PYG{n}{term} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ForeignKeyField}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{)}
+    \PYG{n}{position} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{IntegerField}\PYG{p}{()}
+
+    \PYG{k}{class} \PYG{n+nc}{Meta}\PYG{p}{:}
+        \PYG{n}{primary\PYGZus{}key} \PYG{o}{=} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{CompositeKey}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZsq{}}\PYG{p}{,} \PYG{l+s+s1}{\PYGZsq{}term\PYGZsq{}}\PYG{p}{,} \PYG{l+s+s1}{\PYGZsq{}position\PYGZsq{}}\PYG{p}{)}
+\end{Verbatim}

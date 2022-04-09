@@ -1,0 +1,56 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{def} \PYG{n+nf}{get\PYGZus{}tf\PYGZus{}idf}\PYG{p}{()} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ModelSelect}\PYG{p}{:}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Get the query that contains every pair of documents and terms,}
+\PYG{l+s+sd}{    and their TF\PYGZhy{}IDF scores.}
+
+\PYG{l+s+sd}{    To get the TF\PYGZhy{}IDF score for a term in a document,}
+\PYG{l+s+sd}{    just add a WHERE clause to the query to filter by the document and term.}
+\PYG{l+s+sd}{    If there is no such clause, this will require a full\PYGZhy{}table scan,}
+\PYG{l+s+sd}{    with a few binary searches based off of that;}
+\PYG{l+s+sd}{    with a WHERE clause, it requires no such scans.}
+
+\PYG{l+s+sd}{    This also returns a CTE used inside this query, so that it can be bound later.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+
+    \PYG{c+c1}{\PYGZsh{} Count the number of documents in the database.}
+    \PYG{c+c1}{\PYGZsh{} This is used to calculate the IDF for each term.}
+    \PYG{c+c1}{\PYGZsh{} I haven\PYGZsq{}t been able to find a way to include this}
+    \PYG{c+c1}{\PYGZsh{} as a subquery in the main query, so I\PYGZsq{}m just}
+    \PYG{c+c1}{\PYGZsh{} doing it manually.}
+    \PYG{n}{count\PYGZus{}documents} \PYG{o}{=} \PYG{n}{Document}\PYG{o}{.}\PYG{n}{select}\PYG{p}{()}\PYG{o}{.}\PYG{n}{count}\PYG{p}{()}
+
+    \PYG{c+c1}{\PYGZsh{} Subquery for the TF and IDF metrics separately, as well as the values that go}
+    \PYG{c+c1}{\PYGZsh{} into both, but separately.}
+    \PYG{c+c1}{\PYGZsh{} As before, this is because I wasn\PYGZsq{}t able to figure out how to combine}
+    \PYG{c+c1}{\PYGZsh{} the two expressions for TF and IDF without repeating them.}
+    \PYG{n}{tfs\PYGZus{}and\PYGZus{}idfs} \PYG{o}{=} \PYG{n}{Document}\PYG{o}{.}\PYG{n}{select}\PYG{p}{(}
+        \PYG{n}{Document}\PYG{o}{.}\PYG{n}{id}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZus{}id\PYGZsq{}}\PYG{p}{),}
+        \PYG{n}{NormalizedTerm}\PYG{o}{.}\PYG{n}{id}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}term\PYGZus{}id\PYGZsq{}}\PYG{p}{),}
+        \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{count}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZus{}length\PYGZsq{}}\PYG{p}{),}
+        \PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{count}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}term\PYGZus{}count\PYGZsq{}}\PYG{p}{),}
+        \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{count}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}n\PYGZus{}containing\PYGZsq{}}\PYG{p}{),}
+        \PYG{p}{(}
+            \PYG{n}{pw}\PYG{o}{.}\PYG{n}{Cast}\PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{count}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}float\PYGZdq{}}\PYG{p}{)} \PYG{o}{/} \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{count}
+        \PYG{p}{)}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}tf\PYGZsq{}}\PYG{p}{),}
+        \PYG{p}{(}
+            \PYG{n}{pw}\PYG{o}{.}\PYG{n}{fn}\PYG{o}{.}\PYG{n}{Log}\PYG{p}{(}
+                \PYG{n}{count\PYGZus{}documents} \PYG{o}{/} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{Cast}\PYG{p}{(}\PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{count}\PYG{p}{,} \PYG{l+s+s1}{\PYGZsq{}float\PYGZsq{}}\PYG{p}{)}
+            \PYG{p}{)}
+        \PYG{p}{)}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}idf\PYGZsq{}}\PYG{p}{),}
+        \PYG{p}{(}
+            \PYG{n}{pw}\PYG{o}{.}\PYG{n}{Cast}\PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{count}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}float\PYGZdq{}}\PYG{p}{)} \PYG{o}{/} \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{count}\PYGZbs{}
+                \PYG{o}{*}
+            \PYG{n}{pw}\PYG{o}{.}\PYG{n}{fn}\PYG{o}{.}\PYG{n}{Log}\PYG{p}{(}
+                \PYG{n}{count\PYGZus{}documents} \PYG{o}{/} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{Cast}\PYG{p}{(}\PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{count}\PYG{p}{,} \PYG{l+s+s1}{\PYGZsq{}float\PYGZsq{}}\PYG{p}{)}
+            \PYG{p}{)}
+        \PYG{p}{)}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}tf\PYGZus{}idf\PYGZsq{}}\PYG{p}{)}
+    \PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{,} \PYG{n}{join\PYGZus{}type}\PYG{o}{=}\PYG{n}{pw}\PYG{o}{.}\PYG{n}{JOIN}\PYG{o}{.}\PYG{n}{CROSS}\PYG{p}{)}\PYGZbs{}
+    \PYG{o}{.}\PYG{n}{switch}\PYG{p}{(}\PYG{n}{Document}\PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{DocumentTotalTermCount}\PYG{p}{,} \PYG{n}{on}\PYG{o}{=}\PYG{p}{(}\PYG{n}{Document}\PYG{o}{.}\PYG{n}{id} \PYG{o}{==} \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{document}\PYG{p}{))}\PYGZbs{}
+    \PYG{o}{.}\PYG{n}{switch}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{DocumentsContainingTermCount}\PYG{p}{,} \PYG{n}{on}\PYG{o}{=}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{o}{.}\PYG{n}{id} \PYG{o}{==} \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{term}\PYG{p}{))}\PYGZbs{}
+    \PYG{o}{.}\PYG{n}{switch}\PYG{p}{(}\PYG{n}{Document}\PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{p}{,} \PYG{n}{on}\PYG{o}{=}\PYG{p}{((}\PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{document} \PYG{o}{==} \PYG{n}{Document}\PYG{o}{.}\PYG{n}{id}\PYG{p}{)} \PYG{o}{\PYGZam{}} \PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{term}\PYG{o}{==}\PYG{n}{NormalizedTerm}\PYG{o}{.}\PYG{n}{id}\PYG{p}{)))}
+
+
+    \PYG{k}{return} \PYG{n}{tfs\PYGZus{}and\PYGZus{}idfs}
+
+\end{Verbatim}

@@ -1,0 +1,4 @@
+Flask>=2.0.2
+peewee>=3.14.3
+nltk>=3.7
+beautifulsoup>=4.10

@@ -1,0 +1,107 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n+nd}{@db}\PYG{o}{.}\PYG{n}{atomic}\PYG{p}{()}
+\PYG{k}{def} \PYG{n+nf}{index\PYGZus{}document}\PYG{p}{(}\PYG{n}{document}\PYG{p}{:} \PYG{n}{Document}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Indexes a document, removing all existing relevant indexes.}
+
+\PYG{l+s+sd}{    This should be called when a document is created or updated.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+
+
+    \PYG{c+c1}{\PYGZsh{} If the document was already in the database, reset its counters.}
+    \PYG{c+c1}{\PYGZsh{} We will recreate them now.}
+    \PYG{n}{reset\PYGZus{}document\PYGZus{}counters}\PYG{p}{(}\PYG{n}{document}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} Record terms that we have already seen.}
+    \PYG{n}{seen\PYGZus{}terms} \PYG{o}{=} \PYG{n+nb}{set}\PYG{p}{()}
+
+    \PYG{n}{normalized\PYGZus{}terms} \PYG{o}{=} \PYG{p}{[]}
+
+    \PYG{c+c1}{\PYGZsh{} Split the document\PYGZsq{}s content into words.}
+    \PYG{n}{words} \PYG{o}{=} \PYG{n}{document}\PYG{o}{.}\PYG{n}{content}\PYG{o}{.}\PYG{n}{split}\PYG{p}{()}
+    \PYG{n}{word\PYGZus{}natural\PYGZus{}term\PYGZus{}names} \PYG{o}{=} \PYG{p}{[}\PYG{n}{filter\PYGZus{}alnum}\PYG{p}{(}\PYG{n}{word}\PYG{o}{.}\PYG{n}{lower}\PYG{p}{())} \PYG{k}{for} \PYG{n}{word} \PYG{o+ow}{in} \PYG{n}{words}\PYG{p}{]}
+
+    \PYG{c+c1}{\PYGZsh{} Select all the natural terms used in the document.}
+    \PYG{n}{unique\PYGZus{}natural\PYGZus{}term\PYGZus{}names} \PYG{o}{=} \PYG{n+nb}{set}\PYG{p}{(}\PYG{n}{word\PYGZus{}natural\PYGZus{}term\PYGZus{}names}\PYG{p}{)}
+    \PYG{n}{natural\PYGZus{}term\PYGZus{}name\PYGZus{}to\PYGZus{}model} \PYG{o}{=} \PYG{n+nb}{dict}\PYG{p}{()}
+    \PYG{c+c1}{\PYGZsh{} Iterate over chunks of the unique set, because there is a limit on the number of parameters in a query.}
+    \PYG{k}{for} \PYG{n}{chunk} \PYG{o+ow}{in} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{chunked}\PYG{p}{(}\PYG{n}{unique\PYGZus{}natural\PYGZus{}term\PYGZus{}names}\PYG{p}{,} \PYG{l+m+mi}{500}\PYG{p}{):}
+        \PYG{n}{natural\PYGZus{}term\PYGZus{}name\PYGZus{}to\PYGZus{}model}\PYG{o}{.}\PYG{n}{update}\PYG{p}{(}
+            \PYG{p}{\PYGZob{}}\PYG{n}{natural\PYGZus{}term}\PYG{o}{.}\PYG{n}{name}\PYG{p}{:} \PYG{n}{natural\PYGZus{}term} \PYG{k}{for} \PYG{n}{natural\PYGZus{}term} \PYG{o+ow}{in} \PYG{n}{NaturalTerm}\PYG{o}{.}\PYG{n}{select}\PYG{p}{()}\PYG{o}{.}\PYG{n}{where}\PYG{p}{(}\PYG{n}{NaturalTerm}\PYG{o}{.}\PYG{n}{name}\PYG{o}{.}\PYG{n}{in\PYGZus{}}\PYG{p}{(}\PYG{n}{chunk}\PYG{p}{))\PYGZcb{}}
+        \PYG{p}{)}
+
+
+    \PYG{c+c1}{\PYGZsh{} For each natural term not in the database, create it.}
+    \PYG{n}{natural\PYGZus{}terms\PYGZus{}to\PYGZus{}create} \PYG{o}{=} \PYG{p}{[]}
+    \PYG{k}{for} \PYG{n}{natural\PYGZus{}term\PYGZus{}name} \PYG{o+ow}{in} \PYG{n}{unique\PYGZus{}natural\PYGZus{}term\PYGZus{}names}\PYG{p}{:}
+        \PYG{k}{if} \PYG{n}{natural\PYGZus{}term\PYGZus{}name} \PYG{o+ow}{not} \PYG{o+ow}{in} \PYG{n}{natural\PYGZus{}term\PYGZus{}name\PYGZus{}to\PYGZus{}model}\PYG{p}{:}
+            \PYG{n}{natural\PYGZus{}terms\PYGZus{}to\PYGZus{}create}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{NaturalTerm}\PYG{p}{(}\PYG{n}{name}\PYG{o}{=}\PYG{n}{natural\PYGZus{}term\PYGZus{}name}\PYG{p}{))}
+    \PYG{n}{NaturalTerm}\PYG{o}{.}\PYG{n}{bulk\PYGZus{}create}\PYG{p}{(}\PYG{n}{natural\PYGZus{}terms\PYGZus{}to\PYGZus{}create}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} Now get the new natural terms.}
+    \PYG{k}{for} \PYG{n}{chunk} \PYG{o+ow}{in} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{chunked}\PYG{p}{(}\PYG{n}{unique\PYGZus{}natural\PYGZus{}term\PYGZus{}names}\PYG{o}{.}\PYG{n}{difference}\PYG{p}{(}\PYG{n+nb}{set}\PYG{p}{(}\PYG{n}{natural\PYGZus{}term\PYGZus{}name\PYGZus{}to\PYGZus{}model}\PYG{p}{)),} \PYG{l+m+mi}{500}\PYG{p}{):}
+        \PYG{n}{natural\PYGZus{}term\PYGZus{}name\PYGZus{}to\PYGZus{}model}\PYG{o}{.}\PYG{n}{update}\PYG{p}{(}
+            \PYG{p}{\PYGZob{}}\PYG{n}{natural\PYGZus{}term}\PYG{o}{.}\PYG{n}{name}\PYG{p}{:} \PYG{n}{natural\PYGZus{}term} \PYG{k}{for} \PYG{n}{natural\PYGZus{}term} \PYG{o+ow}{in} \PYG{n}{NaturalTerm}\PYG{o}{.}\PYG{n}{select}\PYG{p}{()}\PYG{o}{.}\PYG{n}{where}\PYG{p}{(}\PYG{n}{NaturalTerm}\PYG{o}{.}\PYG{n}{name}\PYG{o}{.}\PYG{n}{in\PYGZus{}}\PYG{p}{(}\PYG{n}{chunk}\PYG{p}{))\PYGZcb{}}
+        \PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} Finally, put the list of natural terms in order of the document.}
+    \PYG{n}{natural\PYGZus{}terms} \PYG{o}{=} \PYG{p}{[}\PYG{n}{natural\PYGZus{}term\PYGZus{}name\PYGZus{}to\PYGZus{}model}\PYG{p}{[}\PYG{n}{natural\PYGZus{}term\PYGZus{}name}\PYG{p}{]} \PYG{k}{for} \PYG{n}{natural\PYGZus{}term\PYGZus{}name} \PYG{o+ow}{in} \PYG{n}{word\PYGZus{}natural\PYGZus{}term\PYGZus{}names}\PYG{p}{]}
+
+    \PYG{c+c1}{\PYGZsh{} For each natural term, get its corresponding normalized term.}
+    \PYG{c+c1}{\PYGZsh{} Because there are fewer normalized terms than natural terms,}
+    \PYG{c+c1}{\PYGZsh{} we rely on the LRU cache around normalize\PYGZus{}term.}
+    \PYG{n}{normalized\PYGZus{}terms} \PYG{o}{=} \PYG{p}{[}\PYG{n}{normalize\PYGZus{}term}\PYG{p}{(}\PYG{n}{natural\PYGZus{}term}\PYG{p}{)} \PYG{k}{for} \PYG{n}{natural\PYGZus{}term} \PYG{o+ow}{in} \PYG{n}{natural\PYGZus{}terms}\PYG{p}{]}
+    \PYG{n}{unique\PYGZus{}normalized\PYGZus{}terms} \PYG{o}{=} \PYG{n+nb}{set}\PYG{p}{(}\PYG{n}{normalized\PYGZus{}terms}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} For each normalized term, record how many times it\PYGZsq{}s found in the document.}
+    \PYG{n}{dtpc} \PYG{o}{=} \PYG{p}{[}\PYG{n}{DocumentTermPairCount}\PYG{p}{(}\PYG{n}{document}\PYG{o}{=}\PYG{n}{document}\PYG{p}{,} \PYG{n}{term}\PYG{o}{=}\PYG{n}{term}\PYG{p}{,} \PYG{n}{count}\PYG{o}{=}\PYG{n}{normalized\PYGZus{}terms}\PYG{o}{.}\PYG{n}{count}\PYG{p}{(}\PYG{n}{term}\PYG{p}{))} \PYG{k}{for} \PYG{n}{term} \PYG{o+ow}{in} \PYG{n}{seen\PYGZus{}terms}\PYG{p}{]}
+    \PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{bulk\PYGZus{}create}\PYG{p}{(}\PYG{n}{dtpc}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} If there were any terms which did not have a corresponding DocumentsContainingTermCount record,}
+    \PYG{c+c1}{\PYGZsh{} (which means this is a new term first found in this document),}
+    \PYG{c+c1}{\PYGZsh{} create one for them.}
+
+
+    \PYG{n}{new\PYGZus{}terms} \PYG{o}{=} \PYG{p}{[]}
+    \PYG{n}{existing\PYGZus{}terms} \PYG{o}{=} \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{select}\PYG{p}{()}\PYG{o}{.}\PYG{n}{where}\PYG{p}{(}
+        \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{term}\PYG{o}{.}\PYG{n}{in\PYGZus{}}\PYG{p}{(}\PYG{n}{unique\PYGZus{}normalized\PYGZus{}terms}\PYG{p}{)}
+    \PYG{p}{)}
+    \PYG{n}{existing\PYGZus{}terms} \PYG{o}{=} \PYG{n+nb}{set}\PYG{p}{([}\PYG{n}{i}\PYG{o}{.}\PYG{n}{term}\PYG{o}{.}\PYG{n}{id} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{existing\PYGZus{}terms}\PYG{p}{])}
+    \PYG{k}{for} \PYG{n}{term} \PYG{o+ow}{in} \PYG{n}{seen\PYGZus{}terms}\PYG{p}{:}
+        \PYG{k}{if} \PYG{n}{term} \PYG{o+ow}{not} \PYG{o+ow}{in} \PYG{n}{existing\PYGZus{}terms}\PYG{p}{:}
+            \PYG{n}{new\PYGZus{}terms}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{term}\PYG{p}{)}
+
+    \PYG{n}{new\PYGZus{}dctc\PYGZus{}records} \PYG{o}{=} \PYG{p}{[}
+        \PYG{n}{DocumentsContainingTermCount}\PYG{p}{(}\PYG{n}{term}\PYG{o}{=}\PYG{n}{natural\PYGZus{}term}\PYG{p}{,} \PYG{n}{count}\PYG{o}{=}\PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n}{last\PYGZus{}updated}\PYG{o}{=}\PYG{n}{now}\PYG{p}{())}
+        \PYG{k}{for} \PYG{n}{natural\PYGZus{}term} \PYG{o+ow}{in} \PYG{n}{new\PYGZus{}terms}
+    \PYG{p}{]}
+
+    \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{bulk\PYGZus{}create}\PYG{p}{(}\PYG{n}{new\PYGZus{}dctc\PYGZus{}records}\PYG{p}{)}
+
+
+    \PYG{c+c1}{\PYGZsh{} For every term we found, increment the number of documents that contain it.}
+    \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{update}\PYG{p}{(}
+        \PYG{n}{count}\PYG{o}{=}\PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{count} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{,}
+        \PYG{n}{last\PYGZus{}updated}\PYG{o}{=}\PYG{n}{now}\PYG{p}{()}
+    \PYG{p}{)}\PYG{o}{.}\PYG{n}{where}\PYG{p}{(}
+        \PYG{n}{DocumentsContainingTermCount}\PYG{o}{.}\PYG{n}{term}\PYG{o}{.}\PYG{n}{in\PYGZus{}}\PYG{p}{(}\PYG{n}{seen\PYGZus{}terms}\PYG{p}{)}
+    \PYG{p}{)}\PYG{o}{.}\PYG{n}{execute}\PYG{p}{()}
+
+    \PYG{c+c1}{\PYGZsh{} Update the total term count for this document.}
+    \PYG{n}{total\PYGZus{}terms} \PYG{o}{=} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{normalized\PYGZus{}terms}\PYG{p}{)}
+    \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{create}\PYG{p}{(}
+        \PYG{n}{count}\PYG{o}{=}\PYG{n}{total\PYGZus{}terms}\PYG{p}{,}
+        \PYG{n}{last\PYGZus{}updated}\PYG{o}{=}\PYG{n}{now}\PYG{p}{(),}
+        \PYG{n}{document}\PYG{o}{=}\PYG{n}{document}
+    \PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} Create the forward index}
+    \PYG{n}{term\PYGZus{}positions} \PYG{o}{=} \PYG{p}{[}
+        \PYG{n}{DocumentTermPosition}\PYG{p}{(}
+            \PYG{n}{document}\PYG{o}{=}\PYG{n}{document}\PYG{p}{,}
+            \PYG{n}{term}\PYG{o}{=}\PYG{n}{term}\PYG{p}{,}
+            \PYG{n}{position}\PYG{o}{=}\PYG{n}{i}
+        \PYG{p}{)} \PYG{k}{for} \PYG{n}{i}\PYG{p}{,} \PYG{n}{term} \PYG{o+ow}{in} \PYG{n+nb}{enumerate}\PYG{p}{(}\PYG{n}{normalized\PYGZus{}terms}\PYG{p}{)}
+    \PYG{p}{]}
+    \PYG{n}{DocumentTermPosition}\PYG{o}{.}\PYG{n}{bulk\PYGZus{}create}\PYG{p}{(}\PYG{n}{term\PYGZus{}positions}\PYG{p}{)}
+\end{Verbatim}

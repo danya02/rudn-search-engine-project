@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <title>{%block title %}{% endblock%}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+      <header class="navbar navbar-expand-lg navbar-light bg-light">
+              <nav class="container"">
+                <a class="navbar-brand" href="/">
+                  {% include "RUDN logo.svg" %}
+                </a>
+                <span class="navbar-brand mb-0 h1">Project #4</span>
+
+                <form class="d-flex" action="{{url_for('search.index')}}" method="get">
+                    <input class="form-control me-2" type="search" name="q" value="{{query}}" placeholder="Search for something..."/>
+                    <select class="form-select me-2" name="algo">
+                        <option value="tf-idf-cos" {% if algo=="tf-idf-cos" or algo == None %}selected="selected"{%endif%}>TF-IDF with cosine similarity metric (multiple keywords)</option>
+                        <option value="tf-idf-sum" {% if algo=="tf-idf-sum" %}selected="selected"{%endif%}>TF-IDF with sum similarity metric (single keyword)</option>
+                        <option value="proximity" {% if algo=="proximity" %}selected="selected"{%endif%}>Proximity search (phrase search)</option>
+                
+                    </select>
+                    <input type="submit" class="btn btn-outline-success"  value="Search"/>
+                </form>
+                
+              </nav>
+      </header>

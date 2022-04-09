@@ -1,0 +1,21 @@
+{%extends "base.html" %}
+{%block content%}
+<div class="document-content container">
+
+<h1 class="display-3">{{document.title}}</h1>
+<p class="lead">Source: <a href="{{document.source}}">{{document.source}}</a></p>
+<form class="row" method="get">
+    <input type="hidden" name="q" value="{{request.args.get('q', '')}}">
+    <div class="col form-check">
+        <input class="" id="norm-highlight" name="norm-highlight" type="checkbox" value="1" {% if norm_highlight %}checked{% endif %}>
+        <label for="norm-highlight">Show normalized terms in highlighted segments</label>
+    </div>
+    <button type="submit" class="btn col btn-primary form-control">Refresh</button>
+
+</form>
+<hr/>
+    {% for paragraph in document.content.split('\n') %}
+        <p>{{paragraph | safe}}</p>
+    {% endfor %}
+</div>
+{% endblock %}

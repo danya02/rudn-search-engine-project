@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h1 class="display-1">Search engine</h1>
+    <p>This is the search engine project made by Danya Generalov, student number 1032212280.</p>
+    <p>Try the search bar at the top of the page, or:</p>
+    <ul>
+        <li><a href="{{url_for('documents.list')}}">List all known documents</a></li>
+        <li><a href="{{url_for('terms.list')}}">List the known terms and their stats</a></li>
+        <li><a href="{{url_for('download_db')}}" class="text-danger">Download the full SQLite database</a> (stored at <code>{{db_path}}</code>, size: {{db_size|filesizeformat}})</li>
+    </ul>
+</div>
+{% endblock %}

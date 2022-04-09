@@ -1,0 +1,15 @@
+{% include "search-streaming-do_sort.html" %}
+</ul>
+</main>
+<style>
+    .border-spinner { display: none; }
+</style>
+<script>
+    document.getElementById("progress-spinner").remove();
+</script>
+<noscript>List finished: found {{rows}} results.</noscript>
+<script>
+    document.getElementById("streaming-info-text").innerHTML = "Found {{rows}} results.";
+</script>
+</body>
+</html>

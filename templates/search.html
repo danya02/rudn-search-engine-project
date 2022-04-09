@@ -1,0 +1,44 @@
+{%extends "base.html" %}
+{%block content%}
+<h1>{{results|length}} results</h1>
+
+
+<script>
+    query = "{{query}}";
+    function download_snippet(id) {
+        var element = document.getElementById(id);
+        var url = "{{url_for('snippets.get_snippet')}}?q=" + encodeURIComponent(query) + "&id=" + id;
+        var XHR = new XMLHttpRequest();
+        XHR.open('GET', url, true);
+        XHR.onload = function(e) {
+            if (this.status == 200) {
+                var text = this.response;
+                element.outerHTML = text;
+            } else {
+                element.textContent = "Error: " + this.status;
+                element.className = "btn btn-outline-danger";
+            }
+        };
+        XHR.onerror = function(e) {
+            element.textContent = "Error: " + this.status;
+            element.className = "btn btn-outline-danger";
+        };
+        element.textContent = "Downloading snippet...";
+        XHR.send();
+        }
+</script>
+
+    {% if results %}
+        <ul>
+        {% for score, result in results %}
+            <li>
+                <a href="{{url_for('documents.view', document_id=result.id, q=query, algo=algo)}}">{{result.title}}</a>
+                <span class="badge bg-secondary">{{score}}</span>
+                <button class="btn btn-outline-primary" id="{{result.id}}" onclick="download_snippet('{{result.id}}')">Download snippet</button>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+{% endblock %}

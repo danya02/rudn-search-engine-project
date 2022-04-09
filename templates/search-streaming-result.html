@@ -1,0 +1,6 @@
+<li class="result-item list-group-item" data-score="{{score}}" data-row="{{row}}">
+    {{result.id}}. 
+    <a href="{{url_for('documents.view', document_id=result.id, q=query, algo=algo)}}">{{result.title}}</a>
+    <span class="badge bg-secondary">Score: {{score}}</span>
+    <button class="btn btn-outline-primary" id="{{result.id}}" onclick="download_snippet('{{result.id}}')">View snippet</button>
+</li>

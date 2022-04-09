@@ -1,0 +1,62 @@
+{% include "base-header.html" %}
+<main>
+    <h1 id="streaming-info-text">Streaming results... <span id="doc-counter">(Waiting for counter...)</span></h1>
+    <div id="progress-spinner" class="spinner-border text-success" role="status"></div>
+
+
+
+        <script>
+            query = "{{query}}";
+            function download_snippet(id) {
+                var element = document.getElementById(id);
+                var url = "{{url_for('snippets.get_snippet')}}?q=" + encodeURIComponent(query) + "&id=" + id;
+                var XHR = new XMLHttpRequest();
+                XHR.open('GET', url, true);
+                XHR.onload = function(e) {
+                    if (this.status == 200) {
+                        var text = this.response;
+                        element.outerHTML = text;
+                    } else {
+                        element.textContent = "Error: " + this.status;
+                        element.className = "btn btn-outline-danger";
+                    }
+                };
+                XHR.onerror = function(e) {
+                    element.textContent = "Error: " + this.status;
+                    element.className = "btn btn-outline-danger";
+                };
+                element.textContent = "Downloading snippet...";
+                XHR.send();
+                }
+
+            
+
+            function runSort(){
+                var btn = document.getElementById("sort-button");
+                btn.textContent = "Sorting...";
+                var list = document.getElementById("results");
+                var items = list.childNodes;
+                var itemsArray = [];
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].nodeType == 1) {
+                        itemsArray.push(items[i]);
+                    }
+                }
+
+                itemsArray.sort(function(a, b) {
+                    return b.dataset['score'] - a.dataset['score'];
+                });
+                for(var i = 0; i < itemsArray.length; i++){
+                    list.appendChild(itemsArray[i]);
+                }
+                currentdate = new Date();
+                btn.textContent = "Sorted at " + currentdate.getHours() + ":"  
+                + currentdate.getMinutes() + ":" 
+                + currentdate.getSeconds() + "; try again?";
+
+            }
+        </script>
+        <p>For performance reasons, the results are not sorted automatically.</p>
+    <button id="sort-button" class="btn btn-outline-warning" onclick="runSort();">Sort results now</button>
+    <p>When all results are listed, the time taken will be written at the bottom of the page. Stop loading the page or navigate to a different page to stop the search listing.</p>
+    <ul id="results" class="list-group">

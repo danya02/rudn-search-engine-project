@@ -1,0 +1,19 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+Hi, Danya:
+
+Thanks for asking about using the Archive as a data source for your research. We have had similar requests before. If you’re planning to use automated means to gather data from the site, our system admins have recommended using a timed curl or https get process to receive the HTML pages without the CSS and JS content. Our system times out requests for works (using the work ID number) that are more frequent than 100 per 400 seconds; search result listings that are more frequent than 100 per 720 seconds; or bookmark result listings more frequent than 30 per 720 seconds. We also ask that you do not scrape on weekends, as those tend to be our busiest times. We do not add specific scraping bots to a permit list, though editing the scraper\PYGZsq{}s user agent to indicate it\PYGZsq{}s a bot may reduce the chance of a summary block.
+
+You should be able to use /works/\PYGZsh{}\PYGZsh{}\PYGZsh{} \PYGZhy{} the robots.txt is set to interfere with certain types of filtered search results, hence the \PYGZsq{}?\PYGZsq{} in the line.
+
+Be aware that some scrapes will need significant customization to bypass the age verification code and to access works restricted to logged\PYGZhy{}in users.
+
+Because we are fully staffed by volunteers, we don\PYGZsq{}t have anyone available to compile a database for you.
+
+As well, while our Terms of Service reserve us the right to display the works, the authors of the fanworks maintain all copyrights in their works. As a result, we do not have any ability to give you permission to reproduce any portions of posted works as part of a report. If you want to seek such permissions from the authors of particular fanworks, you can do so by leaving a comment on their works.
+
+If you have any questions, let us know!
+
+Best,
+CJ
+AO3 Support
+\end{Verbatim}

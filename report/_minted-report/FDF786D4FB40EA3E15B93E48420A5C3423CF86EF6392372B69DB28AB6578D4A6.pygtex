@@ -1,0 +1,53 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{def} \PYG{n+nf}{get\PYGZus{}snippet\PYGZus{}internal}\PYG{p}{(}\PYG{n}{document}\PYG{p}{,} \PYG{n}{normal\PYGZus{}terms}\PYG{p}{,} \PYG{n}{size}\PYG{p}{,} \PYG{n}{skip}\PYG{o}{=}\PYG{l+m+mi}{10}\PYG{p}{):}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Get a snippet from a document corresponding to the given document ID and query.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+
+    \PYG{n}{normal\PYGZus{}terms} \PYG{o}{=} \PYG{p}{\PYGZob{}}\PYG{n}{term}\PYG{o}{.}\PYG{n}{id} \PYG{k}{for} \PYG{n}{term} \PYG{o+ow}{in} \PYG{n}{normal\PYGZus{}terms}\PYG{p}{\PYGZcb{}}
+
+    \PYG{n}{term\PYGZus{}idfs} \PYG{o}{=} \PYG{p}{\PYGZob{}}\PYG{n}{i}\PYG{p}{:} \PYG{n}{tf\PYGZus{}idf\PYGZus{}tools}\PYG{o}{.}\PYG{n}{get\PYGZus{}term\PYGZus{}idf}\PYG{p}{(}\PYG{n}{i}\PYG{p}{)} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{normal\PYGZus{}terms}\PYG{p}{\PYGZcb{}}
+
+    \PYG{n}{document\PYGZus{}term\PYGZus{}list} \PYG{o}{=} \PYG{p}{[}\PYG{n}{dtp}\PYG{o}{.}\PYG{n}{term} \PYG{k}{for} \PYG{n}{dtp} \PYG{o+ow}{in} \PYG{n}{DocumentTermPosition}\PYG{o}{.}\PYG{n}{select}\PYG{p}{(}\PYG{n}{DocumentTermPosition}\PYG{p}{,} \PYG{n}{NormalizedTerm}\PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{NormalizedTerm}\PYG{p}{,} \PYG{n}{on}\PYG{o}{=}\PYG{p}{(}\PYG{n}{DocumentTermPosition}\PYG{o}{.}\PYG{n}{term} \PYG{o}{==} \PYG{n}{NormalizedTerm}\PYG{o}{.}\PYG{n}{id}\PYG{p}{))}\PYG{o}{.}\PYG{n}{where}\PYG{p}{(}\PYG{n}{DocumentTermPosition}\PYG{o}{.}\PYG{n}{document} \PYG{o}{==} \PYG{n}{document}\PYG{p}{)}\PYG{o}{.}\PYG{n}{order\PYGZus{}by}\PYG{p}{(}\PYG{n}{DocumentTermPosition}\PYG{o}{.}\PYG{n}{position}\PYG{p}{)]}
+
+    \PYG{n}{best\PYGZus{}window\PYGZus{}start} \PYG{o}{=} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}
+    \PYG{n}{best\PYGZus{}window\PYGZus{}end} \PYG{o}{=} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}
+    \PYG{n}{best\PYGZus{}window\PYGZus{}score} \PYG{o}{=} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}
+    \PYG{n}{best\PYGZus{}interesting\PYGZus{}indexes} \PYG{o}{=} \PYG{p}{[]}
+
+    \PYG{c+c1}{\PYGZsh{} Iterate over the windows in the document.}
+    \PYG{k}{for} \PYG{n}{window\PYGZus{}start} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{document\PYGZus{}term\PYGZus{}list}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{n}{size} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{skip}\PYG{p}{):}
+        \PYG{n}{window\PYGZus{}end} \PYG{o}{=} \PYG{n}{window\PYGZus{}start} \PYG{o}{+} \PYG{n}{size}
+        \PYG{n}{window} \PYG{o}{=} \PYG{n}{document\PYGZus{}term\PYGZus{}list}\PYG{p}{[}\PYG{n}{window\PYGZus{}start}\PYG{p}{:}\PYG{n}{window\PYGZus{}end}\PYG{p}{]}
+        \PYG{n}{window\PYGZus{}score} \PYG{o}{=} \PYG{l+m+mi}{0}
+
+        \PYG{c+c1}{\PYGZsh{} If the term occurs more than once, such a window is exponentially penalized.}
+        \PYG{n}{repeat\PYGZus{}penalty} \PYG{o}{=} \PYG{n}{collections}\PYG{o}{.}\PYG{n}{defaultdict}\PYG{p}{(}\PYG{k}{lambda}\PYG{p}{:} \PYG{l+m+mi}{1}\PYG{p}{)}
+
+        \PYG{n}{interesting\PYGZus{}indexes} \PYG{o}{=} \PYG{p}{[]}
+
+        \PYG{c+c1}{\PYGZsh{} Terms are weighted according to their closeness to the center of the window,}
+        \PYG{c+c1}{\PYGZsh{} as well as their IDF.}
+
+        \PYG{k}{for} \PYG{n}{index}\PYG{p}{,} \PYG{n}{term} \PYG{o+ow}{in} \PYG{n+nb}{enumerate}\PYG{p}{(}\PYG{n}{window}\PYG{p}{):}
+            \PYG{k}{if} \PYG{n}{term}\PYG{o}{.}\PYG{n}{id} \PYG{o+ow}{in} \PYG{n}{normal\PYGZus{}terms}\PYG{p}{:}
+                \PYG{n}{interesting\PYGZus{}indexes}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{index}\PYG{p}{)}
+                \PYG{n}{position} \PYG{o}{=} \PYG{n}{index} \PYG{o}{/} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{window}\PYG{p}{)}
+                \PYG{n}{position} \PYG{o}{=} \PYG{l+m+mi}{2}\PYG{o}{*}\PYG{n}{position} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}
+                \PYG{n}{term\PYGZus{}presence\PYGZus{}score} \PYG{o}{=} \PYG{n}{term\PYGZus{}idfs}\PYG{p}{[}\PYG{n}{term}\PYG{o}{.}\PYG{n}{id}\PYG{p}{]} \PYG{o}{*} \PYG{p}{(}\PYG{l+m+mi}{1}\PYG{o}{\PYGZhy{}}\PYG{n+nb}{abs}\PYG{p}{(}\PYG{n}{position} \PYG{o}{**} \PYG{l+m+mi}{3}\PYG{p}{))} \PYG{o}{*} \PYG{n}{repeat\PYGZus{}penalty}\PYG{p}{[}\PYG{n}{term}\PYG{o}{.}\PYG{n}{id}\PYG{p}{]}
+                \PYG{n}{window\PYGZus{}score} \PYG{o}{+=} \PYG{n}{term\PYGZus{}presence\PYGZus{}score}
+                \PYG{n}{repeat\PYGZus{}penalty}\PYG{p}{[}\PYG{n}{term}\PYG{o}{.}\PYG{n}{id}\PYG{p}{]} \PYG{o}{/=} \PYG{l+m+mi}{2}
+
+        \PYG{k}{if} \PYG{n}{window\PYGZus{}score} \PYG{o}{\PYGZgt{}} \PYG{n}{best\PYGZus{}window\PYGZus{}score}\PYG{p}{:}
+            \PYG{n}{best\PYGZus{}window\PYGZus{}start} \PYG{o}{=} \PYG{n}{window\PYGZus{}start}
+            \PYG{n}{best\PYGZus{}window\PYGZus{}end} \PYG{o}{=} \PYG{n}{window\PYGZus{}end}
+            \PYG{n}{best\PYGZus{}window\PYGZus{}score} \PYG{o}{=} \PYG{n}{window\PYGZus{}score}
+            \PYG{n}{best\PYGZus{}interesting\PYGZus{}indexes} \PYG{o}{=} \PYG{n}{interesting\PYGZus{}indexes}
+
+    \PYG{n}{document\PYGZus{}word\PYGZus{}list} \PYG{o}{=} \PYG{n}{document\PYGZus{}stats}\PYG{o}{.}\PYG{n}{split\PYGZus{}by\PYGZus{}good\PYGZus{}words}\PYG{p}{(}\PYG{n}{document}\PYG{o}{.}\PYG{n}{content}\PYG{p}{)}
+    \PYG{n}{snippet} \PYG{o}{=} \PYG{n}{document\PYGZus{}word\PYGZus{}list}\PYG{p}{[}\PYG{n}{best\PYGZus{}window\PYGZus{}start}\PYG{p}{:}\PYG{n}{best\PYGZus{}window\PYGZus{}end}\PYG{p}{]}
+    \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n}{best\PYGZus{}interesting\PYGZus{}indexes}\PYG{p}{:}
+        \PYG{n}{snippet}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}\PYGZlt{}b\PYGZgt{}\PYGZsq{}} \PYG{o}{+} \PYG{n}{snippet}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{o}{+} \PYG{l+s+s1}{\PYGZsq{}\PYGZlt{}/b\PYGZgt{}\PYGZsq{}}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{n}{snippet}\PYG{p}{,} \PYG{n}{best\PYGZus{}window\PYGZus{}score}\PYG{p}{)}
+    \PYG{k}{return} \PYG{l+s+s1}{\PYGZsq{} \PYGZsq{}}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{snippet}\PYG{p}{),} \PYG{n}{best\PYGZus{}window\PYGZus{}score}
+\end{Verbatim}

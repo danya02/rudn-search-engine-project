@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script>
+    function download_natural_terms(id) {
+        var element = document.getElementById(id);
+        var url = "{{url_for('terms.get_natural')}}?id=" + id;
+        var XHR = new XMLHttpRequest();
+        XHR.open('GET', url, true);
+        XHR.onload = function(e) {
+            if (this.status == 200) {
+                var text = this.response;
+                element.outerHTML = text;
+            } else {
+                element.textContent = "Error: " + this.status;
+                element.className = "btn btn-outline-danger";
+            }
+        };
+        XHR.onerror = function(e) {
+            element.textContent = "Error: " + this.status;
+            element.className = "btn btn-outline-danger";
+        };
+        element.textContent = "Downloading terms...";
+        XHR.send();
+        }
+    function download_all_natural_terms(){
+        var elements = document.getElementsByClassName("btn-download-nat");
+        for (var i = 0; i < elements.length; i++) {
+            download_natural_terms(elements[i].id);
+        }
+    }
+    </script>
+
+<div class="document-content container">
+    <style>
+        .pagination {flex-wrap: wrap;}
+    </style>
+    <form class="row" method="GET">
+        <div class="col">
+            <label for="order">Order by:</label>
+            <select id="order" name="order" class="form-select">
+                <option value="id" {% if order == "id" %}selected{% endif %}>ID</option>
+                <option value="name" {% if order == "name" %}selected{% endif %}>Name</option>
+                <option value="doc-count" {% if order == "doc-count" %}selected{% endif %}>Number of documents containing the term</option>
+            </select>
+            </div>
+        <button type="submit" class="btn col btn-primary form-control">Refresh</button>
+    </form>
+
+    {% include "pagination.html" %}
+
+    <button class="btn btn-outline-danger" onclick="download_all_natural_terms()">Download all natural terms (slows down browser)</button>
+
+    <ul class="list-group">
+    {% for item in terms %}
+        <li class="list-group-item">
+            {{item.term.id}}. <a href="{{ url_for('terms.view', term_id=item.term.id) }}">{{item.term.name}}</a>
+            <span class="badge bg-secondary">seen in {{item.count}} docs</span>
+            <span class="badge bg-success">IDF: {{get_idf(item)}}</span>
+            <button class="btn btn-outline-primary btn-download-nat" id="{{item.term.id}}" onclick="download_natural_terms('{{item.term.id}}')">View natural terms</button>
+        </li>
+
+    {% endfor %}
+    </ul>
+
+    {% include "pagination.html" %}
+
+</div>
+{%endblock%}

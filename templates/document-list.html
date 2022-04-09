@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="document-content container">
+    <style>
+        .pagination {flex-wrap: wrap;}
+    </style>
+    <form method="GET">
+        <label for="order">Order by:</label>
+        <select id="order" name="order" class="form-select">
+            <option value="id" {% if order == "id" %}selected{% endif %}>ID</option>
+            <option value="title" {% if order == "title" %}selected{% endif %}>Title</option>
+            <option value="terms" {% if order == "terms" %}selected{% endif %}>Number of terms</option>
+        </select>
+        <button type="submit" class="btn btn-primary form-control">Refresh</button>
+    </form>
+
+
+    {% include "pagination.html" %}
+
+    <ul class="list-group">
+    {% for item in documents %}
+        <li class="list-group-item">
+            {{item.id}}. <a href="{{ url_for('documents.view', document_id=item.id) }}">{{item.title}}</a>
+        </li>
+
+    {% endfor %}
+    </ul>
+
+    {% include "pagination.html" %}
+
+</div>
+{%endblock%}

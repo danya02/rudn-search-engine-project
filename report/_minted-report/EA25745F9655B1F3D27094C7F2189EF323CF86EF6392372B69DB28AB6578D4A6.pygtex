@@ -1,0 +1,38 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{def} \PYG{n+nf}{get\PYGZus{}term\PYGZus{}tf}\PYG{p}{(}\PYG{n}{term}\PYG{p}{:} \PYG{n}{NormalizedTerm}\PYG{p}{,} \PYG{n}{idf\PYGZus{}fac}\PYG{p}{:} \PYG{n+nb}{float} \PYG{o}{=} \PYG{l+m+mi}{1}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{pw}\PYG{o}{.}\PYG{n}{ModelSelect}\PYG{p}{:}
+    \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Returns a Select query}
+\PYG{l+s+sd}{    which establishes a mapping between every document}
+\PYG{l+s+sd}{    and TF(term, document).}
+
+\PYG{l+s+sd}{    `idf\PYGZus{}fac` is premultiplied into the result; by default it is 1,}
+\PYG{l+s+sd}{    meaning this returns plain TFs. If the term\PYGZsq{}s IDF is supplied,}
+\PYG{l+s+sd}{    this will return the TF\PYGZhy{}IDF score instead (though it will still be called `tf`).}
+
+\PYG{l+s+sd}{    Column names:}
+
+\PYG{l+s+sd}{    document\PYGZus{}id: the document ID}
+\PYG{l+s+sd}{    tf: the TF for the given term in said document}
+\PYG{l+s+sd}{    document\PYGZus{}length: number of terms in the document}
+\PYG{l+s+sd}{    term\PYGZus{}count: number of times the given term appears in the document}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+
+    \PYG{c+c1}{\PYGZsh{} Select every document;}
+    \PYG{c+c1}{\PYGZsh{} join to it the total number of terms in the document;}
+    \PYG{c+c1}{\PYGZsh{} join to it the number of times our term appears in the document;}
+    \PYG{c+c1}{\PYGZsh{} calculate the ratio between the two (casting the first to float to force float division);}
+    \PYG{c+c1}{\PYGZsh{} finally select the document, the document length, the term count, and the ratio}
+    \PYG{n}{tfs} \PYG{o}{=} \PYG{n}{Document}\PYG{o}{.}\PYG{n}{select}\PYG{p}{(}
+        \PYG{n}{Document}\PYG{o}{.}\PYG{n}{id}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZus{}id\PYGZsq{}}\PYG{p}{),}
+        \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{count}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}document\PYGZus{}length\PYGZsq{}}\PYG{p}{),}
+        \PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{count}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}term\PYGZus{}count\PYGZsq{}}\PYG{p}{),}
+        \PYG{p}{((}
+            \PYG{n}{pw}\PYG{o}{.}\PYG{n}{Cast}\PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{count}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}float\PYGZdq{}}\PYG{p}{)} \PYG{o}{/} \PYG{n}{DocumentTotalTermCount}\PYG{o}{.}\PYG{n}{count}\PYG{p}{)}\PYG{o}{*}\PYG{n}{idf\PYGZus{}fac}
+        \PYG{p}{)}\PYG{o}{.}\PYG{n}{alias}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}tf\PYGZsq{}}\PYG{p}{)}
+    \PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{DocumentTotalTermCount}\PYG{p}{)}\PYGZbs{}
+          \PYG{o}{.}\PYG{n}{switch}\PYG{p}{(}\PYG{n}{Document}\PYG{p}{)}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{p}{)}\PYGZbs{}
+            \PYG{o}{.}\PYG{n}{where}\PYG{p}{(}\PYG{n}{DocumentTermPairCount}\PYG{o}{.}\PYG{n}{term} \PYG{o}{==} \PYG{n}{term}\PYG{p}{)}\PYGZbs{}
+            \PYG{o}{.}\PYG{n}{group\PYGZus{}by}\PYG{p}{(}\PYG{n}{Document}\PYG{o}{.}\PYG{n}{id}\PYG{p}{)}\PYG{o}{.}\PYG{n}{namedtuples}\PYG{p}{()}
+
+    \PYG{k}{return} \PYG{n}{tfs}
+\end{Verbatim}

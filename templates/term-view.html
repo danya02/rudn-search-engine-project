@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script>
+    function download_natural_terms(id) {
+        var element = document.getElementById(id);
+        var url = "{{url_for('terms.get_natural')}}?id=" + id;
+        var XHR = new XMLHttpRequest();
+        XHR.open('GET', url, true);
+        XHR.onload = function(e) {
+            if (this.status == 200) {
+                var text = this.response;
+                element.outerHTML = text;
+            } else {
+                element.textContent = "Error: " + this.status;
+                element.className = "btn btn-outline-danger";
+            }
+        };
+        XHR.onerror = function(e) {
+            element.textContent = "Error: " + this.status;
+            element.className = "btn btn-outline-danger";
+        };
+        element.textContent = "Downloading terms...";
+        XHR.send();
+        }
+    function download_all_natural_terms(){
+        var elements = document.getElementsByClassName("btn-download-nat");
+        for (var i = 0; i < elements.length; i++) {
+            download_natural_terms(elements[i].id);
+        }
+    }
+    </script>
+
+<div class="document-content container">
+    <style>
+        .pagination {flex-wrap: wrap;}
+    </style>
+
+    <h1 class="display-4">{{term.name}}</h1>
+    <p class="lead">AKA: {{ natural_terms }}</p>
+
+    <p>This term appears in {{doc_count}} documents, and its IDF is {{idf}}.</p>
+    <p>Below are its TFs per document.</p>
+
+
+    <form class="row" method="GET">
+        <div class="row">
+            <label for="order">Order documents by:</label>
+            <select id="order" name="order" class="form-select">
+                <option value="id" {% if order == "id" %}selected{% endif %}>ID</option>
+                <option value="title" {% if order == "title" %}selected{% endif %}>Title</option>
+                <option value="terms" {% if order == "terms" %}selected{% endif %}>Number of times term appears in document</option>
+            </select>
+        </div>
+        <button type="submit" class="btn row btn-primary form-control">Refresh</button>
+    </form>
+
+    {% include "pagination.html" %}
+
+    <ul class="list-group">
+    {% for item in documents %}
+    <li class="list-group-item">
+        {{item.id}}. <a href="{{ url_for('documents.view', document_id=item.id, q=term.name) }}">{{item.title}}</a>
+        <span class="badge bg-primary">appears {{get_occurrences(item)}} times</span>
+        <span class="badge bg-secondary">TF: {{get_tf(item)}}</span>
+        <span class="badge bg-success">TF-IDF: {{get_tf(item) * idf}}</span>
+    </li>
+
+    {% endfor %}
+    </ul>
+
+    {% include "pagination.html" %}
+
+</div>
+{%endblock%}
