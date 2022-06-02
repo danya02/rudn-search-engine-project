@@ -5,7 +5,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 #db = pw.SqliteDatabase('database.db')
 
-database_path = '/mnt/Data/database.db'
+database_path = '/mnt/Data/search_engine.db'
 db = pw.SqliteDatabase(database_path, timeout=15, pragmas={'temp_store_directory': '"/mnt/Data/"', 'journal_mode': 'wal'})
 
 class MyModel(pw.Model):
